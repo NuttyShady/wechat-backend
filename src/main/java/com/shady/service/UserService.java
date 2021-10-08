@@ -5,27 +5,27 @@ import com.shady.dao.UserDao;
 import java.util.List;
 
 public interface UserService {
-//    /**
-//     * 新增一个用户
-//     *
-//     * @param name
-//     * @param age
-//     */
-//    int create(String name, Integer age);
 
     /**
      * 根据openid查询用户
      *
      * @param openid
-     * @return
+     * @return 返回查询结果list
      */
     List<UserDao> getByOpenid(String openid);
 
-//    /**
-//     * 根据name删除用户
-//     *
-//     * @param name
-//     */
-//    int deleteByName(String name);
+    /**
+     * 根据phoneNum绑定用户
+     *
+     * @param phoneNum
+     * @param openid
+     */
+    Boolean bindPhoneNum(String phoneNum, String openid);
 
+    /**
+     * 设置密码
+     * @param password
+     * @param sepPhone
+     */
+    Boolean setPassword(String password, String sepPhone);
 }
