@@ -8,15 +8,21 @@ public interface UserService {
 
     /**
      * 根据openid查询用户
-     *
      * @param openid
      * @return 返回查询结果list
      */
-    List<UserDao> getByOpenid(String openid);
+    List<UserDao> getUserByOpenid(String openid);
+
+    /**
+     * 根据phoneNum查询用户
+     * @param phoneNum
+     * @param password
+     * @return 返回查询结果list
+     */
+    List<UserDao> getUserByPhonePass(String phoneNum, String password);
 
     /**
      * 根据phoneNum绑定用户
-     *
      * @param phoneNum
      * @param openid
      */

@@ -5,11 +5,11 @@ import com.shady.dao.UserDao;
 import com.shady.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @RestController
@@ -22,10 +22,20 @@ public class UserController {
         return "user: "+name;
     }
 
-    @RequestMapping("/login")
-    public String dologin(@RequestParam String openid) {
+    @RequestMapping("/idlogin")
+    public String openidLogin(@RequestParam String openid) {
         System.out.println("=====\nOpenID: " + openid);
-        List<UserDao> userList = userService.getByOpenid(openid);
+        List<UserDao> userList = userService.getUserByOpenid(openid);
+        String json = new Gson().toJson(userList);
+        return json;
+    }
+
+    @RequestMapping("/phonelogin")
+    public String phoneNumLogin(HttpServletRequest request) {
+        System.out.println("=====\nRequest: " + request.getRequestURI());
+        String phoneNum = request.getParameter("phoneNum");
+        String password = request.getParameter("password");
+        List<UserDao> userList = userService.getUserByPhonePass(phoneNum, password);
         String json = new Gson().toJson(userList);
         return json;
     }
@@ -45,10 +55,10 @@ public class UserController {
     }
 
     @RequestMapping("/setpassword")
-    public String setPass(@RequestBody String requestBody) {
-        System.out.println("=====\nReceived body: " + requestBody);
-        String sepPass = requestBody.split("&")[0].split("=")[1];
-        String sepPhone = requestBody.split("&")[1].split("=")[1];
+    public String setPass(HttpServletRequest request) {
+        System.out.println("=====\nRequest: " + request.getRequestURI());
+        String sepPass = request.getParameter("password");
+        String sepPhone = request.getParameter("phoneNum");
         Boolean setFlag = false;
         try {
             setFlag = userService.setPassword(sepPass, sepPhone);
