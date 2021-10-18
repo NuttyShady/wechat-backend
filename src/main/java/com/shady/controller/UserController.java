@@ -1,15 +1,20 @@
 package com.shady.controller;
 
 import com.google.gson.Gson;
+import com.shady.config.WechatWebSocket;
 import com.shady.dao.UserDao;
 import com.shady.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.boot.configurationprocessor.json.JSONException;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.dao.DataAccessException;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 @RestController
@@ -68,4 +73,14 @@ public class UserController {
         if(setFlag) return "SUCCESS";
         else return "ERROR";
     }
+
+//    @RequestMapping("/debug/websocket")
+//    public void wsTest() throws JSONException, UnsupportedEncodingException {
+//        WechatWebSocket ws = new WechatWebSocket();
+//        JSONObject jo = new JSONObject();
+//        jo.put("message", "Websocket debug message from backend!");
+//        jo.put("From", "backend");
+//        jo.put("To", "websockettest");
+//        ws.onMessage(jo.toString(),null);
+//    }
 }

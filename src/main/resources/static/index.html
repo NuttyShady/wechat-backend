@@ -1,0 +1,71 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>My WebSocket</title>
+</head>
+
+<body>
+<input id="text" type="text" />
+<button onclick="sendtest()">Send</button>
+<div id="message"></div>
+
+</body>
+
+<script type="text/javascript">
+    var websocket = null;
+    var userid = new Date().getTime();    //当前登录人员身份标识
+    // var userid = "loginUsernameID";
+    //判断当前浏览器是否支持WebSocket
+    if ('WebSocket' in window) {
+        websocket = new WebSocket("ws://localhost:8080/websocket/" + userid);
+    } else {
+        alert('Not support websocket')
+    }
+
+    //连接发生错误的回调方法
+    websocket.onerror = function() {
+        setMessageInnerHTML("websocket error");
+    };
+
+    //连接成功建立的回调方法
+    websocket.onopen = function(event) {
+        setMessageInnerHTML("open");
+    }
+
+    //接收到消息的回调方法 event.data为服务端返回的数据
+    websocket.onmessage = function(event) {
+        setMessageInnerHTML(event.data);
+    }
+
+    //连接关闭的回调方法
+    websocket.onclose = function() {
+        setMessageInnerHTML("websocket close");
+    }
+
+    //监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
+    window.onbeforeunload = function() {
+        websocket.close();
+    }
+
+    //将消息显示在网页上
+    function setMessageInnerHTML(innerHTML) {
+        document.getElementById('message').innerHTML += innerHTML + '<br/>';
+    }
+
+    //关闭连接
+    function closeWebSocket() {
+        websocket.close();
+    }
+
+    //发送消息
+    function send() {
+        var message = document.getElementById('text').value;
+        websocket.send(message);
+    }
+
+    function sendtest() {
+        let jo = `{"message":"Send debug message!","To":"backend", "From":"` + userid + `"}`;
+        websocket.send(jo);
+    }
+</script>
+</html>
