@@ -2,6 +2,7 @@ package com.shady.service.impl;
 
 import com.shady.dao.UserDao;
 import com.shady.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+@Slf4j
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -27,6 +29,7 @@ public class UserServiceImpl implements UserService {
             users = jdbcTemplate.query("select * from `staff_all` where openID = ?", this::getUserList, openid);
         } catch (DataAccessException e) {
             e.printStackTrace();
+            log.error(e.getMessage());
             return null;
         }
         return users;
@@ -39,6 +42,7 @@ public class UserServiceImpl implements UserService {
             users = jdbcTemplate.query("select * from `staff_all` where phoneNum = ? AND password = ?", this::getUserList, phoneNum, password);
         } catch (DataAccessException e) {
             e.printStackTrace();
+            log.error(e.getMessage());
             return null;
         }
         return users;
@@ -58,6 +62,7 @@ public class UserServiceImpl implements UserService {
             user.setIsFirstLogin(resultSet.getInt("isFirstLogin"));
         } catch (SQLException e) {
             e.printStackTrace();
+            log.error(e.getMessage());
         }
         return user;
     }

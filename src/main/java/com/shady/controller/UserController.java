@@ -4,19 +4,20 @@ import com.google.gson.Gson;
 import com.shady.config.WechatWebSocket;
 import com.shady.dao.UserDao;
 import com.shady.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import org.springframework.boot.configurationprocessor.json.JSONException;
-import org.springframework.boot.configurationprocessor.json.JSONObject;
+
 import org.springframework.dao.DataAccessException;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.Map;
 
+@Slf4j
 @RestController
 public class UserController {
     @Autowired
@@ -54,6 +55,7 @@ public class UserController {
             bindFlag = userService.bindPhoneNum(phoneNum, openid);
         } catch (DataAccessException e) {
             e.printStackTrace();
+            log.error(e.getMessage());
         }
         if(bindFlag) return "SUCCESS";
         else return "ERROR";
@@ -69,18 +71,26 @@ public class UserController {
             setFlag = userService.setPassword(sepPass, sepPhone);
         } catch (DataAccessException e) {
             e.printStackTrace();
+            log.error(e.getMessage());
         }
         if(setFlag) return "SUCCESS";
         else return "ERROR";
     }
 
-//    @RequestMapping("/debug/websocket")
-//    public void wsTest() throws JSONException, UnsupportedEncodingException {
-//        WechatWebSocket ws = new WechatWebSocket();
-//        JSONObject jo = new JSONObject();
-//        jo.put("message", "Websocket debug message from backend!");
-//        jo.put("From", "backend");
-//        jo.put("To", "websockettest");
-//        ws.onMessage(jo.toString(),null);
-//    }
+    /**
+     * 测试方法：
+     *  1.浏览器中打开index.html（WebSocket页面）并点击Send获取如“Hello, 1634648821014”信息
+     *  2.访问http://localhost:8080/debug/websocket?userid=1634648821014
+     *  3.观察WebSocket页面
+     * @param userid js中根据时间戳生成的websocket识别码（临时）
+     */
+    @RequestMapping("/debug/websocket")
+    public void wsTest(@RequestParam String userid) {
+        WechatWebSocket wws = new WechatWebSocket();
+        Map<String, WechatWebSocket> clients = WechatWebSocket.getClients();
+        for (WechatWebSocket item : clients.values()) {
+            if(item.getUserid().equals(userid))
+                wws.sendMessageTo("Greeting from backend!", userid);
+        }
+    }
 }

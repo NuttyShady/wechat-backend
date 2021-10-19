@@ -8,8 +8,6 @@ import org.springframework.stereotype.Component;
 import javax.websocket.*;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,20 +59,12 @@ public class WechatWebSocket {
     @OnMessage
     public void onMessage(String data, Session session) {
         JsonObject jsonTo = JsonParser.parseString(data).getAsJsonObject();
-        String message = jsonTo.get("message").toString();
-        String source = jsonTo.get("From").toString();
-        String target = jsonTo.get("To").toString();
-        if (session == null && source.equals("backend")) {
-            log.info("服务端发送至客户端[{}]的消息:{}", target, message);
-//            if (!jsonTo.get("To").equals("All")) {
-//                sendMessageTo(message, jsonTo.get("To").toString());
-//            } else {
-//                sendMessageAll("给所有人");
-//            }
-        } else {
-            log.info("服务端收到客户端[{}]，即userid{}的消息:{}", session.getId(), source, data);
-            this.sendMessage("Hello, " + source, session);
-        }
+        String message = jsonTo.get("message").getAsString();
+        String source = jsonTo.get("From").getAsString();
+        String target = jsonTo.get("To").getAsString();
+        log.info("服务端收到客户端[{}]，即userid{}的消息:{}", session.getId(), source, message);
+        this.sendMessageTo("Hello, " + source, source);
+
     }
 
     @OnError
@@ -86,14 +76,14 @@ public class WechatWebSocket {
     /**
      * 服务端发送消息给客户端
      */
-    private void sendMessage(String message, Session toSession) {
-        try {
-            log.info("服务端给客户端[{}]发送消息{}", toSession.getId(), message);
-            toSession.getBasicRemote().sendText(message);
-        } catch (Exception e) {
-            log.error("服务端发送消息给客户端失败：{}", e.getMessage());
-        }
-    }
+//    private void sendMessage(String message, Session toSession) {
+//        try {
+//            log.info("服务端给客户端[{}]发送消息{}", toSession.getId(), message);
+//            toSession.getBasicRemote().sendText(message);
+//        } catch (Exception e) {
+//            log.error("服务端发送消息给客户端失败：{}", e.getMessage());
+//        }
+//    }
 
     public void sendMessageTo(String message, String To) {
         for (WechatWebSocket item : clients.values()) {
@@ -107,5 +97,21 @@ public class WechatWebSocket {
 //            item.session.getAsyncRemote().sendText(message);
 //        }
 //    }
+
+    public static Map<String, WechatWebSocket> getClients() {
+        return clients;
+    }
+
+    public static void setClients(Map<String, WechatWebSocket> clients) {
+        WechatWebSocket.clients = clients;
+    }
+
+    public String getUserid() {
+        return userid;
+    }
+
+    public void setUserid(String userid) {
+        this.userid = userid;
+    }
 
 }
