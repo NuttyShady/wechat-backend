@@ -1,5 +1,6 @@
 package com.shady.service.impl;
 
+import com.shady.bean.RespJson;
 import com.shady.dao.UserDao;
 import com.shady.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Base64;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -25,40 +27,51 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserDao> getUserByOpenid(String openid) {
+    public RespJson getUserByOpenid(String openid) {
+        RespJson resp;
         List<UserDao> users = null;
         try {
             users = jdbcTemplate.query("select * from `staff_all` where openID = ?", this::getUserList, openid);
         } catch (DataAccessException e) {
-            e.printStackTrace();
-            log.error(e.getMessage());
-            return null;
+            String info = String.format("***Login*** Failed logging in for openid: %s , exception found: %s.", openid, e.getMessage());
+            resp = setResp("ERROR", info, null);
+            return resp;
         }
-        if (users.size() == 0) {
-            log.info(String.format("***Login*** Failed logging in for openid: %s , 0 hit found.", openid));
+        if (users.size() != 0) {
+            String info = String.format("***Login*** Login success for openid: %s .", openid);
+            resp = setResp("SUCCESS",info, users);
         } else {
-            log.info(String.format("***Login*** Login success for openid: %s .", openid));
+            String info = String.format("***Login*** Failed logging in for openid: %s , 0 hit found.", openid);
+            resp = setResp("ERROR", info, null);
         }
-        return users;
+        return resp;
     }
 
     @Override
-    public List<UserDao> getUserByPhonePass(String phoneNum, String password) {//TODO 增加登陆失败原因，如密码不匹配等
+    public RespJson getUserByPhonePass(String phoneNum, String password) {
+        RespJson resp;
         List<UserDao> users = null;
-        String base64encodedPass = Base64.getEncoder().encodeToString(password.getBytes(StandardCharsets.UTF_8));
         try {
-            users = jdbcTemplate.query("select * from `staff_all` where phoneNum = ? AND password = ?", this::getUserList, phoneNum, base64encodedPass);
+            users = jdbcTemplate.query("select * from `staff_all` where phoneNum = ?", this::getUserList, phoneNum);
         } catch (DataAccessException e) {
-            e.printStackTrace();
-            log.error(e.getMessage());
-            return null;
+            String info = String.format("***Login*** Failed logging in for phone number: %s , exception found: %s.", phoneNum, e.getMessage());
+            resp = setResp("ERROR", info, null);
+            return resp;
         }
-        if (users.size() == 0) {
-            log.info(String.format("***Login*** Failed logging in for phone number: %s , 0 hit found.", phoneNum));
+        Iterator<UserDao> it = users.iterator();
+        if (it.hasNext()) {
+            if (it.next().getPassword().equals(password)) {
+                String info = String.format("***Login*** Login success for phone number: %s .", phoneNum);
+                resp = setResp("SUCCESS",info, users);
+            } else {
+                String info = String.format("***Login*** Failed logging in for phone number: %s , incorrect password.", phoneNum);
+                resp = setResp("ERROR", info, null);
+            }
         } else {
-            log.info(String.format("***Login*** Login success for phone number: %s .", phoneNum));
+            String info = String.format("***Login*** Failed logging in for phone number: %s , 0 hit found.", phoneNum);
+            resp = setResp("ERROR", info, null);
         }
-        return users;
+        return resp;
     }
 
     private UserDao getUserList(ResultSet resultSet, int i) {
@@ -83,9 +96,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Boolean bindPhoneNum(String phoneNum, String openid) throws DataAccessException {
+    public RespJson bindPhoneNum(String phoneNum, String openid) {
+        AtomicReference<RespJson> resp = new AtomicReference<>(new RespJson());
         List<UserDao> users = null;
-        AtomicReference<Boolean> bindFlag = new AtomicReference<>(false);
         //匹配手机号
         jdbcTemplate.query("select count(*) from `staff_all` where phoneNum = ?", (rs, i) -> {
             UserDao user = new UserDao();
@@ -93,29 +106,42 @@ public class UserServiceImpl implements UserService {
                 //将获取到的openid存入该条目下
                 int setFlag = jdbcTemplate.update("update `staff_all` set openid = ? where phoneNum = ?", openid, phoneNum);
                 if (setFlag == 1) {
-                    log.info(String.format("***Bind*** Open ID %s has bound with phone number: %s .", openid, phoneNum));
-                    bindFlag.set(true);
+                    String info = String.format("***Bind*** Open ID %s has bound with phone number: %s .", openid, phoneNum);
+                    resp.set(setResp("SUCCESS", info, null));
                 } else {
-                    log.info(String.format("***Bind*** Failed to bind Open ID %s with phone number: %s .", openid, phoneNum));
+                    String info = String.format("***Bind*** Failed to bind Open ID %s with phone number: %s .", openid, phoneNum);
+                    resp.set(setResp("ERROR", info, null));
                 }
             } else {
-                log.info(String.format("***Bind*** Failed to bind Open ID %s with phone number: %s , phone number not found.", openid, phoneNum));
+                String info = String.format("***Bind*** Failed to bind Open ID %s with phone number: %s , phone number not found.", openid, phoneNum);
+                resp.set(setResp("ERROR", info, null));
             }
             return user;
         }, phoneNum);
-        return bindFlag.get();
+        return resp.get();
     }
 
     @Override
-    public Boolean setPassword(String password, String phoneNum) throws DataAccessException {
+    public RespJson setPassword(String password, String phoneNum) {
+        RespJson resp;
         String base64encodedPass = Base64.getEncoder().encodeToString(password.getBytes(StandardCharsets.UTF_8));
         int setFlag = jdbcTemplate.update("update `staff_all` set password = ?, isFirstLogin = 0 where phoneNum = ?", base64encodedPass, phoneNum);
         if(setFlag == 1) {
-            log.info(String.format("***Password*** Password set for phone number: %s .", phoneNum));
-            return true;
+            String info = String.format("***Password*** Password set for phone number: %s .", phoneNum);
+            resp = setResp("SUCCESS", info, null);
         } else {
-            log.info(String.format("***Password*** Failed to set password for phone number: %s .", phoneNum));
-            return false;
+            String info = String.format("***Password*** Failed to set password for phone number: %s .", phoneNum);
+            resp = setResp("ERROR", info, null);
         }
+        return resp;
+    }
+
+    private RespJson setResp(String status, String info, List<UserDao> users) {
+        RespJson resp = new RespJson();
+        log.info(info);
+        resp.setStatus(status);
+        resp.setInfo(info);
+        resp.setData(users);
+        return resp;
     }
 }

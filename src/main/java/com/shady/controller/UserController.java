@@ -1,8 +1,8 @@
 package com.shady.controller;
 
 import com.google.gson.Gson;
+import com.shady.bean.RespJson;
 import com.shady.config.WechatWebSocket;
-import com.shady.dao.UserDao;
 import com.shady.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +31,8 @@ public class UserController {
     @RequestMapping("/idlogin")
     public String openidLogin(@RequestParam String openid) {
         System.out.println("=====\nOpenID: " + openid);
-        List<UserDao> userList = userService.getUserByOpenid(openid);
-        String json = new Gson().toJson(userList);
-        return json;
+        RespJson respJson = userService.getUserByOpenid(openid);
+        return new Gson().toJson(respJson);
     }
 
     @RequestMapping("/phonelogin")
@@ -41,24 +40,16 @@ public class UserController {
         System.out.println("=====\nRequest: " + request.getRequestURI());
         String phoneNum = request.getParameter("phoneNum");
         String password = request.getParameter("password");
-        List<UserDao> userList = userService.getUserByPhonePass(phoneNum, password);
-        String json = new Gson().toJson(userList);
-        return json;
+        RespJson respJson = userService.getUserByPhonePass(phoneNum, password);
+        return new Gson().toJson(respJson);
     }
 
     @RequestMapping("/bind")
     public String bindPhone(@RequestParam String phoneNum, @RequestParam String openid) {
         System.out.println("=====\nBind Phone Number: " + phoneNum);
         System.out.println("Bind openid: " + openid);
-        Boolean bindFlag = false;
-        try {
-            bindFlag = userService.bindPhoneNum(phoneNum, openid);
-        } catch (DataAccessException e) {
-            e.printStackTrace();
-            log.error(e.getMessage());
-        }
-        if(bindFlag) return "SUCCESS";
-        else return "ERROR";
+        RespJson respJson = userService.bindPhoneNum(phoneNum, openid);
+        return new Gson().toJson(respJson);
     }
 
     @RequestMapping("/setpassword")
@@ -66,15 +57,8 @@ public class UserController {
         System.out.println("=====\nRequest: " + request.getRequestURI());
         String sepPass = request.getParameter("password");
         String sepPhone = request.getParameter("phoneNum");
-        Boolean setFlag = false;
-        try {
-            setFlag = userService.setPassword(sepPass, sepPhone);
-        } catch (DataAccessException e) {
-            e.printStackTrace();
-            log.error(e.getMessage());
-        }
-        if(setFlag) return "SUCCESS";
-        else return "ERROR";
+        RespJson respJson = userService.setPassword(sepPass, sepPhone);
+        return new Gson().toJson(respJson);
     }
 
     /**
