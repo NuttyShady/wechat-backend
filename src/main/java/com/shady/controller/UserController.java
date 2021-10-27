@@ -6,15 +6,11 @@ import com.shady.config.WechatWebSocket;
 import com.shady.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-
-
-import org.springframework.dao.DataAccessException;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -23,21 +19,14 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @RequestMapping("/getuser")
-    public String getUser(@RequestParam(value = "name", defaultValue = "Shady") String name) {  //RequestParam接收URL中参数
-        return "user: "+name;
-    }
-
     @RequestMapping("/idlogin")
     public String openidLogin(@RequestParam String openid) {
-        System.out.println("=====\nOpenID: " + openid);
         RespJson respJson = userService.getUserByOpenid(openid);
         return new Gson().toJson(respJson);
     }
 
     @RequestMapping("/phonelogin")
     public String phoneNumLogin(HttpServletRequest request) {
-        System.out.println("=====\nRequest: " + request.getRequestURI());
         String phoneNum = request.getParameter("phoneNum");
         String password = request.getParameter("password");
         RespJson respJson = userService.getUserByPhonePass(phoneNum, password);
@@ -46,15 +35,12 @@ public class UserController {
 
     @RequestMapping("/bind")
     public String bindPhone(@RequestParam String phoneNum, @RequestParam String openid) {
-        System.out.println("=====\nBind Phone Number: " + phoneNum);
-        System.out.println("Bind openid: " + openid);
         RespJson respJson = userService.bindPhoneNum(phoneNum, openid);
         return new Gson().toJson(respJson);
     }
 
     @RequestMapping("/setpassword")
     public String setPass(HttpServletRequest request) {
-        System.out.println("=====\nRequest: " + request.getRequestURI());
         String sepPass = request.getParameter("password");
         String sepPhone = request.getParameter("phoneNum");
         RespJson respJson = userService.setPassword(sepPass, sepPhone);

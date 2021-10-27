@@ -1,9 +1,6 @@
 package com.shady.service;
 
 import com.shady.bean.RespJson;
-import com.shady.dao.UserDao;
-
-import java.util.List;
 
 public interface UserService {
 
