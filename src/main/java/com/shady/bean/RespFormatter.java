@@ -4,7 +4,7 @@ import com.shady.dao.UserDao;
 
 import java.util.List;
 
-public class RespJson {
+public class RespFormatter {
     private String status;
     private String info;
     private List<UserDao> data;

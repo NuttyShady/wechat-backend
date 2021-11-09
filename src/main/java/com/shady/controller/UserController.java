@@ -1,7 +1,7 @@
 package com.shady.controller;
 
 import com.google.gson.Gson;
-import com.shady.bean.RespJson;
+import com.shady.bean.RespFormatter;
 import com.shady.config.WechatWebSocket;
 import com.shady.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -21,30 +21,30 @@ public class UserController {
 
     @RequestMapping("/idlogin")
     public String openidLogin(@RequestParam String openid) {
-        RespJson respJson = userService.getUserByOpenid(openid);
-        return new Gson().toJson(respJson);
+        RespFormatter respFormatter = userService.getUserByOpenid(openid);
+        return new Gson().toJson(respFormatter);
     }
 
     @RequestMapping("/phonelogin")
     public String phoneNumLogin(HttpServletRequest request) {
         String phoneNum = request.getParameter("phoneNum");
         String password = request.getParameter("password");
-        RespJson respJson = userService.getUserByPhonePass(phoneNum, password);
-        return new Gson().toJson(respJson);
+        RespFormatter respFormatter = userService.getUserByPhonePass(phoneNum, password);
+        return new Gson().toJson(respFormatter);
     }
 
     @RequestMapping("/bind")
     public String bindPhone(@RequestParam String phoneNum, @RequestParam String openid) {
-        RespJson respJson = userService.bindPhoneNum(phoneNum, openid);
-        return new Gson().toJson(respJson);
+        RespFormatter respFormatter = userService.bindPhoneNum(phoneNum, openid);
+        return new Gson().toJson(respFormatter);
     }
 
     @RequestMapping("/setpassword")
     public String setPass(HttpServletRequest request) {
         String sepPass = request.getParameter("password");
         String sepPhone = request.getParameter("phoneNum");
-        RespJson respJson = userService.setPassword(sepPass, sepPhone);
-        return new Gson().toJson(respJson);
+        RespFormatter respFormatter = userService.setPassword(sepPass, sepPhone);
+        return new Gson().toJson(respFormatter);
     }
 
     /**
@@ -63,4 +63,35 @@ public class UserController {
                 wws.sendMessageTo("Greeting from backend!", userid);
         }
     }
+
+    /**
+     * DB中将route分为route_done和route_total
+     * @param request
+     * @return
+     */
+    @RequestMapping("/maintenance/inspection")
+    public String inspection(HttpServletRequest request) {
+        String operate = request.getParameter("operate");
+        String taskUUID = request.getParameter("taskUUID");
+        int inspectionNum = Integer.parseInt(request.getParameter("inspectionNum"));
+        RespFormatter respFormatter = null;
+        switch (operate) {
+            case "check": {
+                respFormatter = userService.checkInspection(taskUUID, inspectionNum);
+                break;
+            }
+            case "submit": {
+                respFormatter = userService.submitInspection(taskUUID, inspectionNum);
+                break;
+            }
+        }
+        return new Gson().toJson(respFormatter);
+    }
+
+//    @RequestMapping("/maintenance/repair")
+//    public String repairRequirement(HttpServletRequest request) {
+//        String operate = request.getParameter("operate");
+//
+//        return new Gson().toJson();
+//    }
 }

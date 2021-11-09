@@ -1,6 +1,6 @@
 package com.shady.service.impl;
 
-import com.shady.bean.RespJson;
+import com.shady.bean.RespFormatter;
 import com.shady.dao.UserDao;
 import com.shady.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -27,8 +27,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public RespJson getUserByOpenid(String openid) {
-        RespJson resp;
+    public RespFormatter getUserByOpenid(String openid) {
+        RespFormatter resp;
         List<UserDao> users = null;
         try {
             users = jdbcTemplate.query("select * from `staff_all` where openID = ?", this::getUserList, openid);
@@ -48,8 +48,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public RespJson getUserByPhonePass(String phoneNum, String password) {
-        RespJson resp;
+    public RespFormatter getUserByPhonePass(String phoneNum, String password) {
+        RespFormatter resp;
         List<UserDao> users = null;
         try {
             users = jdbcTemplate.query("select * from `staff_all` where phoneNum = ?", this::getUserList, phoneNum);
@@ -96,8 +96,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public RespJson bindPhoneNum(String phoneNum, String openid) {
-        AtomicReference<RespJson> resp = new AtomicReference<>(new RespJson());
+    public RespFormatter bindPhoneNum(String phoneNum, String openid) {
+        AtomicReference<RespFormatter> resp = new AtomicReference<>(new RespFormatter());
         List<UserDao> users = null;
         //匹配手机号
         jdbcTemplate.query("select count(*) from `staff_all` where phoneNum = ?", (rs, i) -> {
@@ -122,8 +122,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public RespJson setPassword(String password, String phoneNum) {
-        RespJson resp;
+    public RespFormatter setPassword(String password, String phoneNum) {
+        RespFormatter resp;
         String base64encodedPass = Base64.getEncoder().encodeToString(password.getBytes(StandardCharsets.UTF_8));
         int setFlag = jdbcTemplate.update("update `staff_all` set password = ?, isFirstLogin = 0 where phoneNum = ?", base64encodedPass, phoneNum);
         if(setFlag == 1) {
@@ -136,8 +136,45 @@ public class UserServiceImpl implements UserService {
         return resp;
     }
 
-    private RespJson setResp(String status, String info, List<UserDao> users) {
-        RespJson resp = new RespJson();
+    @Override
+    public RespFormatter checkInspection(String taskUUID, int inspectionNum) {
+        RespFormatter resp = null;
+        List<Integer> result = jdbcTemplate.query("select route_done from `inspection` where taskUUID = ?", (rs, i) -> rs.getInt(1), taskUUID);
+        int routeDone = result.get(0);
+        if (routeDone + 1 == inspectionNum) {
+            String info = String.format("***Inspection*** Inspection for task %s reached checkpoint %d .", taskUUID, inspectionNum);
+            resp = setResp("SUCCESS", info, null);
+        } else {
+            String info = String.format("***Inspection*** Disordered inspection for task %s on checkpoint %d .", taskUUID, inspectionNum);
+            resp = setResp("ERROR", info, null);
+        }
+        return resp;
+    }
+
+    @Override
+    public RespFormatter submitInspection(String taskUUID, int inspectionNum) {
+        RespFormatter resp;
+        int setFlag = jdbcTemplate.update("update `inspection` set route_done = ? where taskUUID = ?", inspectionNum, taskUUID);
+        if(setFlag == 1) {
+            String info = String.format("***Inspection*** Inspection for task %s completed checkpoint %d .", taskUUID, inspectionNum);
+            resp = setResp("SUCCESS", info, null);
+            List<Integer> result = jdbcTemplate.query("select route_total from `inspection` where taskUUID = ?", (rs, i) -> rs.getInt(1), taskUUID);
+            int routeTotal = result.get(0);
+            //完成全部检查点
+            if (inspectionNum == routeTotal) {
+                info = String.format("***Inspection*** Inspection for task %s completed all %d checkpoint.", taskUUID, routeTotal);
+                resp = setResp("SUCCESS", info, null);
+                jdbcTemplate.update("update `inspection` set state = 1, actualEndTime = NOW() where taskUUID = ?", taskUUID);
+            }
+        } else {
+            String info = String.format("***Inspection*** Task %s failed to submit at checkpoint %d", taskUUID, inspectionNum);
+            resp = setResp("ERROR", info, null);
+        }
+        return resp;
+    }
+
+    private RespFormatter setResp(String status, String info, List<UserDao> users) {
+        RespFormatter resp = new RespFormatter();
         log.info(info);
         resp.setStatus(status);
         resp.setInfo(info);
